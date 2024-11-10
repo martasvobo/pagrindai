@@ -1,2 +1,57 @@
-npx tailwindcss init -p
+# Node modules
 node_modules
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependency directories
+jspm_packages/
+
+# Build directories
+dist/
+build/
+
+# Coverage directory used by testing tools
+coverage/
+
+# Temporary files
+*.tmp
+*.swp
+
+# Production environment variables
+.env.production
+
+# Local environment variables
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Miscellaneous
+.DS_Store
+Thumbs.db
+
+# IDE specific files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Ant Design specific
+public/assets/
+
+# Firebase specific
+.firebase/
+.firebaserc
+firebase-debug.log
+firebase-debug.*.log
+
+# GitHub Actions specific
+.github/workflows/
