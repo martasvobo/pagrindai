@@ -55,7 +55,7 @@ const MovieDescription = () => {
         <Button type="primary" className="mr-2">
           Edit Description
         </Button>
-        <Button type="danger">Remove Movie</Button>
+        <Button danger={true}>Remove Movie</Button>
       </div>
       <Card
         cover={

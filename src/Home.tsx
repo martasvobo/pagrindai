@@ -1,8 +1,7 @@
-import { Card } from "antd";
-import { useNavigate } from "react-router";
 import { PlusOutlined } from "@ant-design/icons";
-import { Modal, Button } from "antd";
+import { Card, Modal } from "antd";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 
 export const movies = [
   {

@@ -1,6 +1,6 @@
 import { BellOutlined, UserOutlined } from "@ant-design/icons";
 import { Badge, Button, Divider, Layout, Popover } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import "tailwindcss/tailwind.css";
 import { auth } from "../firebase";
@@ -26,11 +26,7 @@ const MainLayout = () => {
     navigate("/");
   };
 
-  const [notifications, setNotifications] = useState([
-    "Notification 1",
-    "Notification 2",
-    "Notification 3",
-  ]);
+  const notifications = ["Notification 1", "Notification 2", "Notification 3"];
 
   const notificationContent = (
     <div>
