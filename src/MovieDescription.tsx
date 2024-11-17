@@ -1,7 +1,6 @@
-import React from "react";
-import { useParams } from "react-router";
-import { Card, Rate, Avatar } from "antd";
 import { Comment } from "@ant-design/compatible";
+import { Avatar, Card, Rate } from "antd";
+import { useParams } from "react-router";
 
 export const movies = [
   {

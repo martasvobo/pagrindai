@@ -25,7 +25,7 @@ export const movies = [
   },
 ];
 
-export default function MovieList() {
+export default function Home() {
   const navigate = useNavigate();
 
   const handleMovieClick = (movieId: string) => {

@@ -2,11 +2,20 @@ import { Button, Layout } from "antd";
 import { UserOutlined } from "@ant-design/icons";
 import { useNavigate, Outlet } from "react-router-dom";
 import "tailwindcss/tailwind.css";
+import { useEffect } from "react";
+import { useAuth } from "./contexts/authContext/useAuth";
 
 const { Header, Content, Footer } = Layout;
 
 const MainLayout = () => {
   const navigate = useNavigate();
+  const { currentUser, userLoading } = useAuth();
+
+  useEffect(() => {
+    if (!userLoading && !currentUser) {
+      navigate("/login");
+    }
+  }, [userLoading, currentUser, navigate]);
 
   const handleProfileClick = () => {
     navigate("/profile");
