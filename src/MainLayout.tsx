@@ -1,8 +1,9 @@
-import { Button, Layout } from "antd";
-import { UserOutlined } from "@ant-design/icons";
-import { useNavigate, Outlet } from "react-router-dom";
+import { BellOutlined, UserOutlined } from "@ant-design/icons";
+import { Badge, Button, Divider, Layout, Popover } from "antd";
+import { useEffect, useState } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
 import "tailwindcss/tailwind.css";
-import { useEffect } from "react";
+import { auth } from "../firebase";
 import { useAuth } from "./contexts/authContext/useAuth";
 
 const { Header, Content, Footer } = Layout;
@@ -25,6 +26,24 @@ const MainLayout = () => {
     navigate("/");
   };
 
+  const [notifications, setNotifications] = useState([
+    "Notification 1",
+    "Notification 2",
+    "Notification 3",
+  ]);
+
+  const notificationContent = (
+    <div>
+      {notifications.length > 0 ? (
+        notifications.map((notification, index) => (
+          <p key={index}>{notification}</p>
+        ))
+      ) : (
+        <p>No new notifications</p>
+      )}
+    </div>
+  );
+
   return (
     <Layout className="min-h-screen">
       <Header className="flex justify-between items-center bg-blue-500 p-4">
@@ -34,12 +53,41 @@ const MainLayout = () => {
         >
           Film Haven
         </div>
-        <Button
-          type="primary"
-          shape="circle"
-          icon={<UserOutlined />}
-          onClick={handleProfileClick}
-        />
+        <div>
+          <Popover content={notificationContent} title="Notifications">
+            <Badge count={notifications.length}>
+              <BellOutlined
+                style={{
+                  fontSize: "24px",
+                  color: "white",
+                  marginRight: "16px",
+                }}
+              />
+            </Badge>
+          </Popover>
+          <Divider type="vertical" />
+          <Button
+            type="default"
+            danger={true}
+            onClick={async () => {
+              try {
+                await auth.signOut();
+                navigate("/login");
+              } catch (error) {
+                console.error("Error logging out: ", error);
+              }
+            }}
+          >
+            Logout
+          </Button>
+          <Divider type="vertical" />
+          <Button
+            type="primary"
+            shape="circle"
+            icon={<UserOutlined />}
+            onClick={handleProfileClick}
+          />
+        </div>
       </Header>
       <Content className="flex-grow p-12">
         <Outlet />

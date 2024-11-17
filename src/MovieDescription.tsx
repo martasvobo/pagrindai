@@ -1,5 +1,5 @@
 import { Comment } from "@ant-design/compatible";
-import { Avatar, Card, Rate } from "antd";
+import { Avatar, Button, Card, Rate } from "antd";
 import { useParams } from "react-router";
 
 export const movies = [
@@ -26,6 +26,21 @@ export const movies = [
   },
 ];
 const MovieDescription = () => {
+  const CommentActions = () => (
+    <div>
+      <Button type="link">Remove</Button>
+      <Button type="link">Edit</Button>
+      <Button type="link">Censor</Button>
+    </div>
+  );
+
+  const ReviewActions = () => (
+    <div>
+      <Button type="link">Remove</Button>
+      <Button type="link">Edit</Button>
+    </div>
+  );
+
   const { id } = useParams();
   const movie = movies.find((movie) => movie.id === id);
 
@@ -36,6 +51,12 @@ const MovieDescription = () => {
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">{movie.title}</h1>
+      <div className="flex justify-end mb-4">
+        <Button type="primary" className="mr-2">
+          Edit Description
+        </Button>
+        <Button type="danger">Remove Movie</Button>
+      </div>
       <Card
         cover={
           <img
@@ -52,18 +73,50 @@ const MovieDescription = () => {
         <h2 className="text-xl font-bold mb-2">User Ratings</h2>
         <Rate allowHalf defaultValue={4.5} />
       </div>
-      <div>
-        <h2 className="text-xl font-bold mb-2">User Comments</h2>
-        <Comment
-          author={<a>User1</a>}
-          avatar={<Avatar src="https://via.placeholder.com/40" alt="User1" />}
-          content={<p>Great movie! Highly recommend.</p>}
-        />
-        <Comment
-          author={<a>User2</a>}
-          avatar={<Avatar src="https://via.placeholder.com/40" alt="User2" />}
-          content={<p>Not bad, but could be better.</p>}
-        />
+      <div className="flex">
+        {/* Comments Section */}
+        <div className="w-1/2 pr-2">
+          <h2 className="text-xl font-bold mb-2">User Comments</h2>
+          <Button type="primary" className="mb-4">
+            Add Comment
+          </Button>
+          <Comment
+            author={<a>User1</a>}
+            avatar={<Avatar src="https://via.placeholder.com/40" alt="User1" />}
+            content={<p>Great movie! Highly recommend.</p>}
+            actions={[<CommentActions key="actions1" />]}
+          />
+          <Comment
+            author={<a>User2</a>}
+            avatar={<Avatar src="https://via.placeholder.com/40" alt="User2" />}
+            content={<p>Not bad, but could be better.</p>}
+            actions={[<CommentActions key="actions2" />]}
+          />
+        </div>
+
+        {/* Reviews Section */}
+        <div className="w-1/2 pl-2">
+          <h2 className="text-xl font-bold mb-2">User Reviews</h2>
+          <Button type="primary" className="mb-4">
+            Add Review
+          </Button>
+          <Comment
+            author={<a>Reviewer1</a>}
+            avatar={
+              <Avatar src="https://via.placeholder.com/40" alt="Reviewer1" />
+            }
+            content={<p>Amazing storytelling and direction!</p>}
+            actions={[<ReviewActions key="review-actions1" />]}
+          />
+          <Comment
+            author={<a>Reviewer2</a>}
+            avatar={
+              <Avatar src="https://via.placeholder.com/40" alt="Reviewer2" />
+            }
+            content={<p>The cinematography was stunning.</p>}
+            actions={[<ReviewActions key="review-actions2" />]}
+          />
+        </div>
       </div>
     </div>
   );

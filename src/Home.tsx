@@ -1,5 +1,8 @@
 import { Card } from "antd";
 import { useNavigate } from "react-router";
+import { PlusOutlined } from "@ant-design/icons";
+import { Modal, Button } from "antd";
+import { useState } from "react";
 
 export const movies = [
   {
@@ -32,6 +35,20 @@ export default function Home() {
     navigate(`/movie/${movieId}`);
   };
 
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const showModal = () => {
+    setIsModalVisible(true);
+  };
+
+  const handleOk = () => {
+    setIsModalVisible(false);
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
+  };
+
   return (
     <div className="p-6 min-h-96 bg-white rounded-lg">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -53,6 +70,22 @@ export default function Home() {
             <Card.Meta title={movie.title} description={movie.description} />
           </Card>
         ))}
+
+        <Card
+          hoverable
+          onClick={showModal}
+          className="flex items-center justify-center"
+        >
+          <PlusOutlined style={{ fontSize: "48px" }} />
+        </Card>
+        <Modal
+          title="Create a new movie"
+          open={isModalVisible}
+          onOk={handleOk}
+          onCancel={handleCancel}
+        >
+          <p>Movie creation form </p>
+        </Modal>
       </div>
     </div>
   );

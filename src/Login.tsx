@@ -1,8 +1,8 @@
-import { useEffect } from "react";
 import { getAuth } from "firebase/auth";
 import firebase from "firebase/compat/app";
 import * as firebaseui from "firebaseui";
 import "firebaseui/dist/firebaseui.css";
+import { useEffect } from "react";
 import { app } from "../firebase";
 
 export default function Login() {
@@ -15,15 +15,9 @@ export default function Login() {
       signInSuccessUrl: "/",
       signInOptions: [
         {
-          provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-          clientId:
-            "128928211189-lg7k8gqkfmt1puf4i9p4pmjcsjobe0mf.apps.googleusercontent.com",
-        },
-        {
           provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
         },
       ],
-      //credentialHelper: firebaseui.auth.CredentialHelper.GOOGLE_YOLO,
     });
   }, []);
 
