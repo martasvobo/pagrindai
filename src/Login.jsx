@@ -1,15 +1,13 @@
-import { getAuth } from "firebase/auth";
 import firebase from "firebase/compat/app";
 import * as firebaseui from "firebaseui";
 import "firebaseui/dist/firebaseui.css";
 import { useEffect } from "react";
-import { app } from "../firebase";
+import { auth } from "../firebase";
 
 export default function Login() {
   useEffect(() => {
     const ui =
-      firebaseui.auth.AuthUI.getInstance() ||
-      new firebaseui.auth.AuthUI(getAuth(app));
+      firebaseui.auth.AuthUI.getInstance() || new firebaseui.auth.AuthUI(auth);
 
     ui.start("#firebaseui-auth-container", {
       signInSuccessUrl: "/",

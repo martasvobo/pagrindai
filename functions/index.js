@@ -1,19 +1,49 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
-
-const {onRequest} = require("firebase-functions/v2/https");
+const { onCall } = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
+const admin = require("firebase-admin");
+const functions = require("firebase-functions/v1");
 
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
+admin.initializeApp();
+const db = admin.firestore();
 
-// exports.helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+exports.createReview = onCall(async (request) => {
+  logger.info("Create review: ", request);
+
+  const reviewData = request.data;
+  reviewData.createdAt = admin.firestore.FieldValue.serverTimestamp();
+  reviewData.modifiedAt = admin.firestore.FieldValue.serverTimestamp();
+  reviewData.userId = request.auth.uid;
+
+  try {
+    await db.collection("reviews").add(reviewData);
+    return { status: "success" };
+  } catch (error) {
+    logger.error("Error creating review: ", error);
+    return { status: "error", error: error.message };
+  }
+});
+
+
+exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
+  try {
+    const userDoc = {
+      birthday: admin.firestore.Timestamp.fromDate(new Date()),
+      city: "Kaunas",
+      email: user.email,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      modifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+      name: "Dede",
+      surname: "Jonas",
+      username: "knaiseris",
+      status: "girtas",
+      isAdmin: false,
+      photoUrl:
+        "https://miro.medium.com/v2/resize:fit:500/1*6Ukzy9YDn1FYRDjG-1_FIA@2x.jpeg",
+    };
+
+    await db.collection("users").doc(user.uid).set(userDoc);
+    logger.info("User created: ", user.uid);
+  } catch (error) {
+    logger.error("Error creating user: ", error);
+  }
+});

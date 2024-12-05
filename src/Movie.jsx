@@ -1,6 +1,9 @@
 import { Comment } from "@ant-design/compatible";
 import { Avatar, Button, Card, Rate } from "antd";
+import { useState } from "react";
 import { useParams } from "react-router";
+import ReviewModal from "./reviews/ReviewModal";
+import ReviewSection from "./reviews/ReviewSection";
 
 export const movies = [
   {
@@ -34,15 +37,8 @@ const MovieDescription = () => {
     </div>
   );
 
-  const ReviewActions = () => (
-    <div>
-      <Button type="link">Remove</Button>
-      <Button type="link">Edit</Button>
-    </div>
-  );
-
-  const { id } = useParams();
-  const movie = movies.find((movie) => movie.id === id);
+  const { movieId } = useParams();
+  const movie = movies.find((movie) => movie.id === movieId);
 
   if (!movie) {
     return <p>Movie not found</p>;
@@ -93,30 +89,7 @@ const MovieDescription = () => {
             actions={[<CommentActions key="actions2" />]}
           />
         </div>
-
-        {/* Reviews Section */}
-        <div className="w-1/2 pl-2">
-          <h2 className="text-xl font-bold mb-2">User Reviews</h2>
-          <Button type="primary" className="mb-4">
-            Add Review
-          </Button>
-          <Comment
-            author={<a>Reviewer1</a>}
-            avatar={
-              <Avatar src="https://via.placeholder.com/40" alt="Reviewer1" />
-            }
-            content={<p>Amazing storytelling and direction!</p>}
-            actions={[<ReviewActions key="review-actions1" />]}
-          />
-          <Comment
-            author={<a>Reviewer2</a>}
-            avatar={
-              <Avatar src="https://via.placeholder.com/40" alt="Reviewer2" />
-            }
-            content={<p>The cinematography was stunning.</p>}
-            actions={[<ReviewActions key="review-actions2" />]}
-          />
-        </div>
+        <ReviewSection />
       </div>
     </div>
   );
