@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { auth } from "../../../firebase";
 import { AuthContext } from "./authContext";
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userLoading, setUserLoading] = useState(true);
 
@@ -12,7 +12,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, []);
 
-  async function initializeUser(user: User | null) {
+  async function initializeUser(user) {
     if (user) {
       setCurrentUser({ ...user });
     } else {
