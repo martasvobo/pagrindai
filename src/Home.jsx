@@ -30,7 +30,7 @@ export const movies = [
 export default function Home() {
   const navigate = useNavigate();
 
-  const handleMovieClick = (movieId: string) => {
+  const handleMovieClick = (movieId) => {
     navigate(`/movie/${movieId}`);
   };
 
