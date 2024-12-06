@@ -22,7 +22,7 @@ export default function ReviewModal({
   };
 
   const createReview = (fields) => {
-    const addReview = httpsCallable(functions, "createReview");
+    const addReview = httpsCallable(functions, "reviews-createReview");
 
     addReview({ ...fields, movieId })
       .then((result) => {
@@ -41,7 +41,7 @@ export default function ReviewModal({
   };
 
   const updateReview = (fields) => {
-    const updateReview = httpsCallable(functions, "updateReview");
+    const updateReview = httpsCallable(functions, "reviews-updateReview");
 
     updateReview({ reviewId: form.getFieldValue("id"), reviewData: fields })
       .then((result) => {

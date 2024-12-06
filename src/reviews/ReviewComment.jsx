@@ -7,7 +7,7 @@ export default function ReviewComment({ review, users, setFormReviewId }) {
   const { user } = useAuth();
   const deleteReview = async () => {
     try {
-      const deleteReview = httpsCallable(functions, "deleteReview");
+      const deleteReview = httpsCallable(functions, "reviews-deleteReview");
       await deleteReview({ reviewId: review.id });
       message.success("Review deleted successfully");
     } catch (error) {
