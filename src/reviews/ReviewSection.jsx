@@ -1,21 +1,19 @@
+import { Button } from "antd";
+import { useForm } from "antd/es/form/Form";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router";
-import { useState, useEffect } from "react";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  onSnapshot,
-} from "firebase/firestore";
 import { db } from "../../firebase";
-import { Avatar, Button, Rate } from "antd";
+import ReviewComment from "./ReviewComment";
 import ReviewModal from "./ReviewModal";
 
 export default function ReviewSection() {
-  const [formOpen, setFormOpen] = useState(false);
+  const [formReviewId, setFormReviewId] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [users, setUsers] = useState({});
   const { movieId } = useParams();
+  const [form] = useForm();
+
   useEffect(() => {
     const q = query(collection(db, "reviews"), where("movieId", "==", movieId));
 
@@ -43,31 +41,27 @@ export default function ReviewSection() {
   return (
     <div className="w-1/2 pl-2">
       <h2 className="text-xl font-bold mb-2">User Reviews</h2>
-      <Button type="primary" className="mb-4" onClick={() => setFormOpen(true)}>
+      <Button
+        type="primary"
+        className="mb-4"
+        onClick={() => setFormReviewId(-1)}
+      >
         Add Review
       </Button>
       {reviews.map((review) => (
-        <div key={review.id} className="mb-4 p-4 border rounded-lg shadow-sm">
-          <div className="flex items-center mb-2">
-            <Avatar src={users[review.userId].photoUrl} />
-            <span className="ml-2 font-semibold">
-              {users[review.userId].username}
-            </span>
-          </div>
-          <div className="mb-2">
-            <h3 className="text-lg font-bold">{review.title}</h3>
-            <p className="text-gray-700">{review.text}</p>
-            <div className="mt-2">
-              <Rate disabled value={review.rating} />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button type="primary">Edit</Button>
-            <Button danger>Delete</Button>
-          </div>
-        </div>
+        <ReviewComment
+          review={review}
+          key={review.id}
+          users={users}
+          setFormReviewId={setFormReviewId}
+        />
       ))}
-      <ReviewModal open={formOpen} setOpen={setFormOpen} />
+      <ReviewModal
+        reviews={reviews}
+        formReviewId={formReviewId}
+        setFormReviewId={setFormReviewId}
+        form={form}
+      />
     </div>
   );
 }

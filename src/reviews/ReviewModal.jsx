@@ -1,22 +1,24 @@
-import { Button, Form, Input, Modal, Rate } from "antd";
-import { httpsCallable } from "firebase/functions";
-import React from "react";
-import { functions } from "../../firebase";
+import { Button, Form, Input, message, Modal, Rate } from "antd";
 import FormItem from "antd/es/form/FormItem";
+import { httpsCallable } from "firebase/functions";
+import React, { useEffect } from "react";
 import { useParams } from "react-router";
-import { message } from "antd";
-import { useForm } from "antd/es/form/Form";
+import { functions } from "../../firebase";
 
-export default function ReviewModal({ open, setOpen }) {
-  const [form] = useForm();
+export default function ReviewModal({
+  formReviewId,
+  setFormReviewId,
+  form,
+  reviews,
+}) {
   const { movieId } = useParams();
   const handleOk = () => {
     form.submit();
-    setOpen(false);
+    setFormReviewId(null);
   };
 
   const handleCancel = () => {
-    setOpen(false);
+    setFormReviewId(null);
   };
 
   const createReview = (fields) => {
@@ -24,9 +26,13 @@ export default function ReviewModal({ open, setOpen }) {
 
     addReview({ ...fields, movieId })
       .then((result) => {
+        if (result.data.status === "error") {
+          message.error(result.data.error);
+          return;
+        }
         message.success("Review added successfully");
         form.resetFields();
-        setOpen(false);
+        setFormReviewId(null);
       })
       .catch((error) => {
         message.error("Error adding review");
@@ -34,11 +40,40 @@ export default function ReviewModal({ open, setOpen }) {
       });
   };
 
+  const updateReview = (fields) => {
+    const updateReview = httpsCallable(functions, "updateReview");
+
+    updateReview({ reviewId: form.getFieldValue("id"), reviewData: fields })
+      .then((result) => {
+        if (result.data.status === "error") {
+          message.error(result.data.error);
+          return;
+        }
+        message.success("Review updated successfully");
+        form.resetFields();
+        setFormReviewId(null);
+      })
+      .catch((error) => {
+        message.error("Error updating review");
+        console.error(error);
+      });
+  };
+
+  useEffect(() => {
+    if (formReviewId !== null) {
+      form.resetFields();
+      if (formReviewId !== -1) {
+        const review = reviews.find((r) => r.id === formReviewId);
+        form.setFieldsValue(review);
+      }
+    }
+  }, [formReviewId]);
+
   return (
     <div>
       <Modal
         title="Submit a Review"
-        open={open}
+        open={formReviewId !== null}
         onOk={handleOk}
         onCancel={handleCancel}
         footer={[
@@ -50,7 +85,11 @@ export default function ReviewModal({ open, setOpen }) {
           </Button>,
         ]}
       >
-        <Form layout="vertical" onFinish={createReview} form={form}>
+        <Form
+          layout="vertical"
+          onFinish={formReviewId === -1 ? createReview : updateReview}
+          form={form}
+        >
           <FormItem label="Rating" name="rating">
             <Rate />
           </FormItem>
