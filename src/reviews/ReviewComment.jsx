@@ -20,6 +20,21 @@ export default function ReviewComment({ review, users, setFormReviewId }) {
     setFormReviewId(review.id);
   };
 
+  const weightReview = async () => {
+    try {
+      const weightReview = httpsCallable(functions, "reviews-weightReview");
+      const result = await weightReview({ reviewId: review.id });
+      if (result.data.status === "error") {
+        message.error(result.data.error);
+        return;
+      }
+      message.success("Review validated successfully");
+    } catch (error) {
+      console.error(error);
+      message.error("Error validating review");
+    }
+  };
+
   return (
     <div key={review.id} className="mb-4 p-4 border rounded-lg shadow-sm">
       <div className="flex items-center mb-2">
@@ -35,16 +50,23 @@ export default function ReviewComment({ review, users, setFormReviewId }) {
           <Rate disabled value={review.rating} />
         </div>
       </div>
-      {review.userId == user.uid && (
-        <div className="flex gap-2">
-          <Button type="primary" onClick={editReview}>
-            Edit
+      <div className="flex gap-2">
+        {review.userId == user.uid && (
+          <>
+            <Button type="primary" onClick={editReview}>
+              Edit
+            </Button>
+            <Button danger onClick={deleteReview}>
+              Delete
+            </Button>
+          </>
+        )}
+        {user.data.isAdmin && (
+          <Button danger onClick={weightReview} disabled={review.validated}>
+            {review.validated ? "Validated" : "Validate"}
           </Button>
-          <Button danger onClick={deleteReview}>
-            Delete
-          </Button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

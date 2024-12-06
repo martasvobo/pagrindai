@@ -51,15 +51,11 @@ exports.createReview = onCall({ region: "europe-west1" }, async (request) => {
     reviewData.userId = userId;
 
     const review = await db.collection("reviews").add(reviewData);
-    const { weight, penalties } = await calculateReviewWeight(
-      reviewData.text,
-      userId
-    );
-
     const reviewWeightData = {
       reviewId: review.id,
-      weight,
-      penalties,
+      weight: 1,
+      penalties: 0,
+      validated: false,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       modifiedAt: admin.firestore.FieldValue.serverTimestamp(),
     };
@@ -92,20 +88,6 @@ exports.updateReview = onCall({ region: "europe-west1" }, async (request) => {
 
     reviewData.modifiedAt = admin.firestore.FieldValue.serverTimestamp();
     await reviewRef.update(reviewData);
-
-    const { weight, penalties } = await calculateReviewWeight(
-      reviewData.text,
-      request.auth.uid
-    );
-
-    const reviewWeightData = {
-      reviewId,
-      weight,
-      penalties,
-      modifiedAt: admin.firestore.FieldValue.serverTimestamp(),
-    };
-
-    await db.collection("reviewWeights").doc(reviewId).update(reviewWeightData);
 
     return { status: "success" };
   } catch (error) {
@@ -142,52 +124,88 @@ exports.deleteReview = onCall({ region: "europe-west1" }, async (request) => {
   }
 });
 
-const calculateReviewWeight = async (reviewText, userId) => {
-  let weight = Math.min(reviewText.length / 150, 0.8);
-  let penalties = 0;
+exports.weightReview = onCall({ region: "europe-west1" }, async (request) => {
+  try {
+    const userId = request.auth.uid;
 
-  const sentences = reviewText
-    .split(/[.!?]+/)
-    .filter((s) => s.trim().length > 0);
-  if (sentences.length === 1) {
-    weight *= 0.7;
-    penalties++;
+    const userDoc = await db.collection("users").doc(userId).get();
+    if (!userDoc.exists || !userDoc.data().isAdmin) {
+      return { status: "error", error: "Unauthorized: Admin access required" };
+    }
+
+    const { reviewId } = request.data;
+
+    const reviewRef = db.collection("reviews").doc(reviewId);
+    const review = await reviewRef.get();
+    const reviewText = review.data().text;
+
+    let weight = Math.min(reviewText.length / 50, 1);
+    let penalties = 0;
+    if (weight < 1) {
+      penalties++;
+    }
+
+    const sentences = reviewText
+      .split(/[.!?]+/)
+      .filter((s) => s.trim().length > 0);
+    if (sentences.length === 1) {
+      weight *= 0.9;
+      penalties++;
+    }
+
+    const improperSentences = sentences.filter(
+      (s) => s.trim() && !s.trim()[0].match(/[A-Z]/)
+    );
+    if (improperSentences.length > 0) {
+      weight *= 0.9;
+      penalties++;
+    }
+
+    const words = reviewText.split(/\s+/);
+    const avgWordLength =
+      words.reduce((sum, word) => sum + word.length, 0) / words.length;
+    if (avgWordLength < 4) {
+      weight *= 0.9;
+      penalties++;
+    }
+
+    const userReviews = await db
+      .collection("reviews")
+      .where("userId", "==", userId)
+      .get();
+
+    if (userReviews.size >= 3) {
+      const ratings = [];
+      userReviews.forEach((doc) => ratings.push(doc.data().rating));
+
+      const avg = ratings.reduce((a, b) => a + b) / ratings.length;
+      const variance =
+        ratings.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / ratings.length;
+
+      const varianceFactor = Math.min(variance / 2, 0.2);
+      weight = weight * (0.8 + varianceFactor);
+      if (varianceFactor < 0.2) {
+        penalties++;
+      }
+    }
+
+    weight = Math.max(0, Math.min(1, weight));
+
+    await db.collection("reviewWeights").doc(reviewId).update({
+      weight: weight,
+      penalties: penalties,
+      modifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+      validated: true,
+    });
+
+    await db.collection("reviews").doc(reviewId).update({
+      modifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+      validated: true,
+    });
+
+    return { status: "success", weight, penalties };
+  } catch (error) {
+    logger.error("Error weighting review: ", error);
+    return { status: "error", error: error.message };
   }
-
-  const improperSentences = sentences.filter(
-    (s) => s.trim() && !s.trim()[0].match(/[A-Z]/)
-  );
-  if (improperSentences.length > 0) {
-    weight *= 0.8;
-    penalties++;
-  }
-
-  const words = reviewText.split(/\s+/);
-  const avgWordLength =
-    words.reduce((sum, word) => sum + word.length, 0) / words.length;
-  if (avgWordLength < 4) {
-    weight *= 0.9;
-    penalties++;
-  }
-
-  const userReviews = await db
-    .collection("reviews")
-    .where("userId", "==", userId)
-    .get();
-
-  if (userReviews.size >= 3) {
-    const ratings = [];
-    userReviews.forEach((doc) => ratings.push(doc.data().rating));
-
-    const avg = ratings.reduce((a, b) => a + b) / ratings.length;
-    const variance =
-      ratings.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / ratings.length;
-
-    const varianceFactor = Math.min(variance / 2, 0.2);
-    weight = weight * (0.8 + varianceFactor);
-  }
-
-  weight = Math.max(0, Math.min(1, weight));
-
-  return { weight, penalties };
-};
+});
