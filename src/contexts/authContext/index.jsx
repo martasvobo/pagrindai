@@ -1,16 +1,19 @@
 import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { auth, db } from "../../../firebase"; // Make sure to import your Firestore instance
 import { AuthContext } from "./authContext";
-import { useNavigate } from "react-router";
-import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [userLoading, setUserLoading] = useState(true);
   const navigate = useNavigate();
 
-  console.log(user);
+  if (user) {
+    console.log(user);
+  }
+
   useEffect(() => {
     return onAuthStateChanged(auth, initializeUser);
   }, []);

@@ -6,6 +6,7 @@ admin.initializeApp();
 const db = admin.firestore();
 
 exports.reviews = require("./reviews");
+exports.movies = require("./movies");
 
 exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
   try {
