@@ -1,56 +1,47 @@
 import { PlusOutlined } from "@ant-design/icons";
-import { Card, Modal } from "antd";
-import { useState } from "react";
-import { useNavigate } from "react-router";
-
-export const movies = [
-  {
-    id: "1",
-    image: "/assets/wolf.webp",
-    title: "Wolf of Wall Street",
-    description:
-      "A New York stockbroker refuses to cooperate in a large securities fraud case involving corruption on Wall Street.",
-  },
-  {
-    id: "2",
-    image: "/assets/james.webp",
-    title: "Casino Royale",
-    description:
-      "James Bond's first mission as 007 leads him to Le Chiffre, banker to the world's terrorists.",
-  },
-  {
-    id: "3",
-    image: "/assets/gray.jfif",
-    title: "50 Shades of Gray",
-    description:
-      "Literature student Anastasia Steele's life changes forever when she meets handsome, yet tormented, billionaire Christian Grey.",
-  },
-];
+import { Card, message } from "antd";
+import { httpsCallable } from "firebase/functions";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { functions } from "../firebase"; // Import Firebase functions
+import { useAuth } from "./contexts/authContext/useAuth";
 
 export default function Home() {
+  const [movies, setMovies] = useState([]);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchMovies = async () => {
+      const getMovies = httpsCallable(functions, "movies-getMovies");
+      try {
+        const response = await getMovies();
+        if (response.data.status === "success") {
+          setMovies(response.data.movies);
+        } else {
+          message.error(response.data.error || "Failed to load movies.");
+        }
+      } catch (error) {
+        console.error("Error fetching movies: ", error);
+        message.error("Failed to load movies. Please try again.");
+      }
+    };
+
+    fetchMovies();
+  }, []);
 
   const handleMovieClick = (movieId) => {
     navigate(`/movie/${movieId}`);
   };
 
-  const [isModalVisible, setIsModalVisible] = useState(false);
-
-  const showModal = () => {
-    setIsModalVisible(true);
-  };
-
-  const handleOk = () => {
-    setIsModalVisible(false);
-  };
-
-  const handleCancel = () => {
-    setIsModalVisible(false);
+  const handleAddMovieClick = () => {
+    navigate("/movie/create");
   };
 
   return (
     <div className="p-6 min-h-96 bg-white rounded-lg">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Render existing movies */}
         {movies.map((movie) => (
           <Card
             key={movie.id}
@@ -59,7 +50,7 @@ export default function Home() {
               <div className="h-64 overflow-hidden">
                 <img
                   alt={movie.title}
-                  src={movie.image}
+                  src={movie.image || "/assets/placeholder.webp"} // Use a placeholder if no image is provided
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -70,21 +61,16 @@ export default function Home() {
           </Card>
         ))}
 
-        <Card
-          hoverable
-          onClick={showModal}
-          className="flex items-center justify-center"
-        >
-          <PlusOutlined style={{ fontSize: "48px" }} />
-        </Card>
-        <Modal
-          title="Create a new movie"
-          open={isModalVisible}
-          onOk={handleOk}
-          onCancel={handleCancel}
-        >
-          <p>Movie creation form </p>
-        </Modal>
+        {/* Add Movie Cell (only for admin) */}
+        {user?.data?.isAdmin && (
+          <Card
+            hoverable
+            onClick={handleAddMovieClick}
+            className="flex items-center justify-center"
+          >
+            <PlusOutlined style={{ fontSize: "48px" }} />
+          </Card>
+        )}
       </div>
     </div>
   );
