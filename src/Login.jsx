@@ -3,6 +3,8 @@ import { getAuth, sendEmailVerification } from "firebase/auth";
 import * as firebaseui from "firebaseui";
 import "firebaseui/dist/firebaseui.css";
 
+
+// those who know 💀💀💀
 export default function Register() {
   const [message, setMessage] = useState(""); // Success or error messages
   const [loading, setLoading] = useState(false); // Loading state
