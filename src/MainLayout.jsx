@@ -1,15 +1,15 @@
 import { BellOutlined, UserOutlined } from "@ant-design/icons";
-import { Badge, Button, Divider, Layout, Popover } from "antd";
-import { useEffect } from "react";
+import { Badge, Button, Divider, Layout, Popover, Modal } from "antd";
+import { useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import "tailwindcss/tailwind.css";
 import { auth } from "../firebase";
-import { useAuth } from "./contexts/authContext/useAuth";
 
 const { Header, Content, Footer } = Layout;
 
 const MainLayout = () => {
   const navigate = useNavigate();
+  const [isModalVisible, setIsModalVisible] = useState(false); // State for the logout confirmation modal
 
   const handleProfileClick = () => {
     navigate("/profile");
@@ -17,6 +17,15 @@ const MainLayout = () => {
 
   const handleTitleClick = () => {
     navigate("/");
+  };
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      navigate("/login");
+    } catch (error) {
+      console.error("Error logging out: ", error);
+    }
   };
 
   const notifications = ["Notification 1", "Notification 2", "Notification 3"];
@@ -58,14 +67,7 @@ const MainLayout = () => {
           <Button
             type="default"
             danger={true}
-            onClick={async () => {
-              try {
-                await auth.signOut();
-                navigate("/login");
-              } catch (error) {
-                console.error("Error logging out: ", error);
-              }
-            }}
+            onClick={() => setIsModalVisible(true)} // Show confirmation modal
           >
             Logout
           </Button>
@@ -84,6 +86,21 @@ const MainLayout = () => {
       <Footer className="text-center">
         Film Haven ©{new Date().getFullYear()} Created by KTU studentai
       </Footer>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        title="Confirm Logout"
+        visible={isModalVisible}
+        onOk={async () => {
+          setIsModalVisible(false);
+          await handleLogout(); // Logout on confirmation
+        }}
+        onCancel={() => setIsModalVisible(false)} // Close modal on cancel
+        okText="Yes, Logout"
+        cancelText="Cancel"
+      >
+        <p>Are you sure you want to log out?</p>
+      </Modal>
     </Layout>
   );
 };

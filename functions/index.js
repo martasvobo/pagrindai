@@ -16,9 +16,9 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
       email: user.email,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       modifiedAt: admin.firestore.FieldValue.serverTimestamp(),
-      name: "Dede",
-      surname: "Jonas",
-      username: "knaiseris",
+      name: "",
+      surname: "",
+      username: "",
       status: "girtas",
       isAdmin: false,
       photoUrl:
