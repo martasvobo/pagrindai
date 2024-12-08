@@ -122,7 +122,6 @@ export default function Home() {
 
   return (
     <div className="p-6 min-h-96 bg-white rounded-lg">
-      {/* Popular Movies Section */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold mb-4">Popular Movies</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -200,7 +199,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* All Movies Section */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">All Movies</h2>
         <Select
