@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Avatar, Card, Image,Input,  Button, message } from "antd";
 import { UserOutlined } from "@ant-design/icons";
 import { auth, db } from "../firebase"; // Import existing Firebase setup
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { Modal, List } from "antd";
 
 const Profile = () => {
   const [showFriends, setShowFriends] = useState(true);
@@ -12,6 +13,8 @@ const Profile = () => {
   const [surname, setSurname] = useState(""); // User's surname
   const [username, setUsername] = useState(""); // User's username
   const user = auth.currentUser; // Get current user from Firebase Auth
+  const [isFriendsPopupVisible, setIsFriendsPopupVisible] = useState(false); // For popup visibility
+  const [friendsList, setFriendsList] = useState([]); // Friends fetched from Firebase
 
   // Array of pictures to select from
   const pictures = [
@@ -20,6 +23,7 @@ const Profile = () => {
     "https://miro.medium.com/v2/resize:fit:500/1*6Ukzy9YDn1FYRDjG-1_FIA@2x.jpeg",
     "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fi.ytimg.com%2Fvi%2FfvYqJwyFUC4%2Fmaxresdefault.jpg&f=1&nofb=1&ipt=41d04f86fac9c12a48dd0df2974077de929e7344b43225846d5745d69fe663da&ipo=images",
     "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fw0.peakpx.com%2Fwallpaper%2F933%2F448%2FHD-wallpaper-pitbull-muscles-big-fighter-strong.jpg&f=1&nofb=1&ipt=dc37afed3fad5224066cf5005afa1059124cc0ffde8386ce20b72719b212128f&ipo=images",
+    "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fi.pinimg.com%2Foriginals%2Fb5%2F1f%2F71%2Fb51f71b6421f4b65aecef786425a9217.jpg&f=1&nofb=1&ipt=a68763a29eb7e8cc67d88df393a1763a65a0e97bdd04549a2bcdd9f8d70a742e&ipo=images",
   ];
 
   // Fetch user's profile picture when the component mounts
@@ -87,8 +91,66 @@ const Profile = () => {
     }
   };
 
-  const handleFriendClick = () => {
-    setShowFriends(false);
+  const fetchFriends = async () => {
+    if (user) {
+      try {
+        const friendshipsQuery = query(
+          collection(db, "friendships"),
+          where("clientID", "==", user.uid)
+        );
+  
+        const querySnapshot = await getDocs(friendshipsQuery);
+  
+        if (!querySnapshot.empty) {
+          const friendsData = querySnapshot.docs[0].data().friends || [];
+  
+          // Process all friends
+          const formattedFriends = await Promise.all(
+            friendsData.flatMap((friend) =>
+              Object.entries(friend).map(async ([friendId, timestamp]) => {
+                const userDoc = doc(db, "users", friendId);
+                const userSnapshot = await getDoc(userDoc);
+  
+                if (userSnapshot.exists()) {
+                  const userData = userSnapshot.data();
+                  return {
+                    id: friendId,
+                    addedAt: timestamp.toDate().toISOString(),
+                    username: userData.username || "Unknown",
+                    photoUrl: userData.photoUrl || null,
+                  };
+                } else {
+                  return {
+                    id: friendId,
+                    addedAt: timestamp.toDate().toISOString(),
+                    username: "Unknown",
+                    photoUrl: null,
+                  };
+                }
+              })
+            )
+          );
+  
+          setFriendsList(formattedFriends);
+        } else {
+          console.error("No matching document found for the given user ID.");
+        }
+      } catch (error) {
+        console.error("Error fetching friends:", error);
+      }
+    }
+  };
+  
+
+  // Handle opening friends popup
+  const handleOpenFriendsPopup = async () => {
+    await fetchFriends();
+    setIsFriendsPopupVisible(true);
+  };
+  
+  // Handle closing friends popup
+  const handleCloseFriendsPopup = () => {
+    setIsFriendsPopupVisible(false);
   };
 
   return (
@@ -154,33 +216,35 @@ const Profile = () => {
       
       {showFriends && (
         <>
-          <Card
-            title="Current Friends"
-            className="w-full max-w-md mx-auto my-4"
-          >
-            <ul className="list-disc list-inside">
-              <li onClick={handleFriendClick} className="cursor-pointer">
-                John Doe
-              </li>
-              <li onClick={handleFriendClick} className="cursor-pointer">
-                Jane Smith
-              </li>
-              <li onClick={handleFriendClick} className="cursor-pointer">
-                Bob Johnson
-              </li>
-            </ul>
-          </Card>
-          <Card
-            title="Friend Recommendations"
-            className="w-full max-w-md mx-auto"
-          >
-            <ul className="list-disc list-inside">
-              <li>Emily Davis</li>
-              <li>Michael Brown</li>
-              <li>Sarah Wilson</li>
-            </ul>
-          </Card>
-        </>
+        <Card
+          title="Current Friends"
+          className="w-full max-w-md mx-auto my-4"
+        >
+          <Button type="primary" onClick={handleOpenFriendsPopup}>
+            View All Friends
+          </Button>
+        </Card>
+  
+        <Modal
+          title="Your Friends"
+          visible={isFriendsPopupVisible}
+          onCancel={handleCloseFriendsPopup}
+          footer={null}
+        >
+          <List
+            dataSource={friendsList}
+            renderItem={(friend) => (
+              <List.Item key={friend.id}>
+                <List.Item.Meta
+                  avatar={<Avatar src={friend.photoUrl} icon={!friend.photoUrl && <UserOutlined />} />}
+                  title={friend.username}
+                  description={`Became friends on: ${new Date(friend.addedAt).toLocaleDateString()}`}
+                />
+              </List.Item>
+            )}
+          />
+        </Modal>
+      </>
       )}
     </div>
   );
