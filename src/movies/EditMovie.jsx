@@ -1,5 +1,5 @@
-import { Button, Form, Input, message } from "antd";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { Button, Form, Input, message, Select } from "antd";
+import { collection, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { db } from "../../firebase";
@@ -11,10 +11,29 @@ export default function EditMovie() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [actors, setActors] = useState([]);
+  const [directors, setDirectors] = useState([]);
 
   if (!user?.data?.isAdmin) {
     return <p>You are not authorized to access this page.</p>;
   }
+
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const actorSnapshot = await getDocs(collection(db, "actors"));
+        const directorSnapshot = await getDocs(collection(db, "directors"));
+
+        setActors(actorSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+        setDirectors(directorSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      } catch (error) {
+        message.error("Failed to load actors and directors.");
+        console.error(error);
+      }
+    };
+
+    fetchOptions();
+  }, []);
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -78,6 +97,42 @@ export default function EditMovie() {
           rules={[{ required: true, message: "Please enter the movie duration" }]}
         >
           <Input type="number" />
+        </Form.Item>
+        <Form.Item
+          label="Actor"
+          name="actor"
+          rules={[{ required: true, message: "Please select an actor" }]}
+        >
+          <Select
+            placeholder="Select an actor"
+            options={actors.map((actor) => ({
+              value: actor.id,
+              label: `${actor.vardas} ${actor.pavarde}`,
+            }))}
+          />
+        </Form.Item>
+        <Form.Item
+          label="Director"
+          name="director"
+          rules={[{ required: true, message: "Please select a director" }]}
+        >
+          <Select
+            placeholder="Select a director"
+            options={directors.map((director) => ({
+              value: director.id,
+              label: `${director.vardas} ${director.pavarde}`,
+            }))}
+          />
+        </Form.Item>
+        <Form.Item
+          label="Image URL"
+          name="image"
+          rules={[
+            { required: true, message: "Please enter the image URL" },
+            { type: "url", message: "Please enter a valid URL" },
+          ]}
+        >
+          <Input placeholder="https://example.com/image.jpg" />
         </Form.Item>
         <Form.Item
           label="Description"

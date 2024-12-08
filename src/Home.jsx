@@ -3,7 +3,7 @@ import { Card, message } from "antd";
 import { httpsCallable } from "firebase/functions";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { functions } from "../firebase"; // Import Firebase functions
+import { functions } from "../firebase";
 import { useAuth } from "./contexts/authContext/useAuth";
 
 export default function Home() {
@@ -41,7 +41,6 @@ export default function Home() {
   return (
     <div className="p-6 min-h-96 bg-white rounded-lg">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Render existing movies */}
         {movies.map((movie) => (
           <Card
             key={movie.id}
@@ -50,7 +49,7 @@ export default function Home() {
               <div className="h-64 overflow-hidden">
                 <img
                   alt={movie.title}
-                  src={movie.image || "/assets/placeholder.webp"} // Use a placeholder if no image is provided
+                  src={movie.image || "/assets/placeholder.webp"}
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -61,7 +60,6 @@ export default function Home() {
           </Card>
         ))}
 
-        {/* Add Movie Cell (only for admin) */}
         {user?.data?.isAdmin && (
           <Card
             hoverable

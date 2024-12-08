@@ -1,8 +1,8 @@
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
+import { doc, getDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { auth, db } from "../../../firebase"; // Make sure to import your Firestore instance
+import { auth, db } from "../../../firebase";
 import { AuthContext } from "./authContext";
 
 export function AuthProvider({ children }) {
