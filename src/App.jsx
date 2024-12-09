@@ -8,6 +8,7 @@ import EditMovie from "./movies/EditMovie";
 import MovieDescription from "./movies/Movie";
 import Profile from "./Profile";
 
+
 function App() {
   return (
     <BrowserRouter>

@@ -6,6 +6,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { db } from "../../firebase";
 import { useAuth } from "../contexts/authContext/useAuth";
 import ReviewSection from "../reviews/ReviewSection";
+import CommentSection from "../comments/CommentSection";
 
 export default function MovieDescription() {
   const { movieId } = useParams();
@@ -166,22 +167,7 @@ export default function MovieDescription() {
       </div>
       
       <div className="mt-8">
-        <h2 className="text-xl font-bold mb-4">User Comments</h2>
-        <Button type="primary" className="mb-4">
-          Add Comment
-        </Button>
-        <Comment
-          author={<a>User1</a>}
-          avatar={<Avatar src="https://via.placeholder.com/40" alt="User1" />}
-          content={<p>Great movie! Highly recommend.</p>}
-          actions={[<CommentActions key="actions1" />]}
-        />
-        <Comment
-          author={<a>User2</a>}
-          avatar={<Avatar src="https://via.placeholder.com/40" alt="User2" />}
-          content={<p>Not bad, but could be better.</p>}
-          actions={[<CommentActions key="actions2" />]}
-        />
+        <CommentSection movieId={movieId} />
       </div>
       <ReviewSection />
     </div>
