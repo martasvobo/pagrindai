@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Avatar, Card, Image,Input,  Button, message } from "antd";
 import { UserOutlined } from "@ant-design/icons";
 import { auth, db } from "../firebase"; // Import existing Firebase setup
-import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, setDoc, Timestamp } from "firebase/firestore";
 import { Modal, List } from "antd";
 
 const Profile = () => {
@@ -15,6 +15,11 @@ const Profile = () => {
   const user = auth.currentUser; // Get current user from Firebase Auth
   const [isFriendsPopupVisible, setIsFriendsPopupVisible] = useState(false); // For popup visibility
   const [friendsList, setFriendsList] = useState([]); // Friends fetched from Firebase
+  const [isRecommendationsPopupVisible, setIsRecommendationsPopupVisible] = useState(false); // For recommendations modal visibility
+  const [recommendationsList, setRecommendationsList] = useState([]); // Recommended users
+  const [invitationTexts, setInvitationTexts] = useState({}); // Keyed by user ID
+  const [pendingRequests, setPendingRequests] = useState(new Set()); // Set to track pending friend request IDs
+
 
   // Array of pictures to select from
   const pictures = [
@@ -115,14 +120,14 @@ const Profile = () => {
                   const userData = userSnapshot.data();
                   return {
                     id: friendId,
-                    addedAt: timestamp.toDate().toISOString(),
+                    addedAt: timestamp.toDate().toISOString(), // Convert Firestore Timestamp
                     username: userData.username || "Unknown",
                     photoUrl: userData.photoUrl || null,
                   };
                 } else {
                   return {
                     id: friendId,
-                    addedAt: timestamp.toDate().toISOString(),
+                    addedAt: "Unknown",
                     username: "Unknown",
                     photoUrl: null,
                   };
@@ -153,6 +158,141 @@ const Profile = () => {
     setIsFriendsPopupVisible(false);
   };
 
+  const fetchRecommendations = async () => {
+    if (user) {
+      try {
+        // Fetch current friends
+        const friendshipsQuery = query(
+          collection(db, "friendships"),
+          where("clientID", "==", user.uid)
+        );
+        const friendshipsSnapshot = await getDocs(friendshipsQuery);
+  
+        let friendIds = [];
+        if (!friendshipsSnapshot.empty) {
+          const friendsData = friendshipsSnapshot.docs[0].data().friends || [];
+          friendIds = friendsData.flatMap((friend) => Object.keys(friend));
+        }
+  
+        // Fetch pending friend requests
+        await fetchPendingRequests();
+  
+        // Query to fetch users who are not in the current user's friends list
+        const usersQuery = query(collection(db, "users"));
+        const usersSnapshot = await getDocs(usersQuery);
+  
+        const randomRecommendations = usersSnapshot.docs
+          .filter(
+            (doc) =>
+              doc.id !== user.uid &&
+              !friendIds.includes(doc.id) &&
+              !pendingRequests.has(doc.id) // Exclude users with pending requests
+          )
+          .sort(() => 0.5 - Math.random()) // Randomize order
+          .slice(0, 8) // Take 5 users
+          .map((doc) => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              username: data.username || "Unknown",
+              photoUrl: data.photoUrl || null,
+            };
+          });
+  
+        setRecommendationsList(randomRecommendations);
+      } catch (error) {
+        console.error("Error fetching recommendations:", error);
+      }
+    }
+  };
+
+  const fetchPendingRequests = async () => {
+    if (user) {
+      try {
+        const requestsQuery = query(
+          collection(db, "friendRequests"),
+          where("requesterID", "==", user.uid),
+          where("status", "==", "waiting")
+        );
+        const requestsSnapshot = await getDocs(requestsQuery);
+  
+        const requestIds = new Set(
+          requestsSnapshot.docs.map((doc) => doc.data().requesteeID)
+        );
+        setPendingRequests(requestIds);
+      } catch (error) {
+        console.error("Error fetching pending requests:", error);
+      }
+    }
+  };  
+
+  // Open recommendations modal
+  const handleOpenRecommendationsPopup = async () => {
+    await fetchRecommendations();
+    setIsRecommendationsPopupVisible(true);
+  };
+
+  // Close recommendations modal
+  const handleCloseRecommendationsPopup = () => {
+    setIsRecommendationsPopupVisible(false);
+  };
+
+  const handleInvitationTextChange = (id, value) => {
+    setInvitationTexts((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const handleAddFriend = async (recommendation) => {
+    if (user) {
+      try {
+        const friendRequestDoc = doc(collection(db, "friendRequests")); // Create a new document
+        await setDoc(friendRequestDoc, {
+          date: new Date().toISOString(),
+          invitationText: invitationTexts[recommendation.id] || "", // Optional text
+          requesteeID: recommendation.id,
+          requesteeName: recommendation.username,
+          requesterID: user.uid,
+          status: "waiting",
+        });
+        message.success(`Friend request sent to ${recommendation.username}`);
+      } catch (error) {
+        console.error("Error sending friend request:", error);
+        message.error("Failed to send friend request. Please try again.");
+      }
+    }
+  };
+  
+  const handleRemoveFriend = async (friendId) => {
+    if (user) {
+      try {
+        // Query the friendships collection to find the current user's entry
+        const friendshipsQuery = query(
+          collection(db, "friendships"),
+          where("clientID", "==", user.uid)
+        );
+        const querySnapshot = await getDocs(friendshipsQuery);
+  
+        if (!querySnapshot.empty) {
+          const docRef = querySnapshot.docs[0].ref; // Reference to the user's friendships document
+          const friendsData = querySnapshot.docs[0].data().friends || [];
+  
+          // Filter out the friend to remove
+          const updatedFriends = friendsData.filter((friend) => !friend.hasOwnProperty(friendId));
+  
+          // Update the document
+          await updateDoc(docRef, { friends: updatedFriends });
+  
+          // Update the local state
+          setFriendsList((prev) => prev.filter((friend) => friend.id !== friendId));
+          message.success("Friend removed successfully.");
+        }
+      } catch (error) {
+        console.error("Error removing friend:", error);
+        message.error("Failed to remove friend. Please try again.");
+      }
+    }
+  };
+  
+  
   return (
     <div className="p-4">
       {showFriends && <h1 className="text-2xl font-bold mb-4">Profile Page</h1>}
@@ -240,12 +380,54 @@ const Profile = () => {
                   title={friend.username}
                   description={`Became friends on: ${new Date(friend.addedAt).toLocaleDateString()}`}
                 />
+                <Button type="primary" danger onClick={() => handleRemoveFriend(friend.id)}>
+                  Remove Friend
+                </Button>
               </List.Item>
             )}
           />
         </Modal>
       </>
       )}
+
+      <Card
+        title="Friend Recommendations"
+        className="w-full max-w-md mx-auto my-4"
+      >
+        <Button type="primary" onClick={handleOpenRecommendationsPopup}>
+          View Friend Recommendations
+        </Button>
+      </Card>
+
+      <Modal
+        title="Friend Recommendations"
+        visible={isRecommendationsPopupVisible}
+        onCancel={handleCloseRecommendationsPopup}
+        footer={null}
+      >
+        <List
+          dataSource={recommendationsList}
+          renderItem={(recommendation) => (
+            <List.Item key={recommendation.id}>
+              <List.Item.Meta
+                avatar={<Avatar src={recommendation.photoUrl} icon={!recommendation.photoUrl && <UserOutlined />} />}
+                title={recommendation.username}
+              />
+              <div>
+                <Input
+                  placeholder="Write a message (optional)"
+                  value={invitationTexts[recommendation.id] || ""}
+                  onChange={(e) => handleInvitationTextChange(recommendation.id, e.target.value)}
+                  style={{ marginBottom: "8px", width: "80%" }}
+                />
+                <Button type="primary" onClick={() => handleAddFriend(recommendation)}>
+                  Add Friend
+                </Button>
+              </div>
+            </List.Item>
+          )}
+        />
+      </Modal>
     </div>
   );
 };
