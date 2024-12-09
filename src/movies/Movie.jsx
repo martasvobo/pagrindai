@@ -1,12 +1,17 @@
-import { Comment } from "@ant-design/compatible";
-import { Avatar, Button, Card, Rate, message } from "antd";
-import { deleteDoc, doc, getDoc } from "firebase/firestore";
+import { Button, Rate, message } from "antd";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+} from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { db } from "../../firebase";
+import CommentSection from "../comments/CommentSection";
 import { useAuth } from "../contexts/authContext/useAuth";
 import ReviewSection from "../reviews/ReviewSection";
-import CommentSection from "../comments/CommentSection";
 
 export default function MovieDescription() {
   const { movieId } = useParams();
@@ -15,6 +20,39 @@ export default function MovieDescription() {
   const [director, setDirector] = useState(null);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [movieRating, setMovieRating] = useState(5);
+
+  useEffect(() => {
+    const fetchMovieRatings = async () => {
+      try {
+        const weightsRef = collection(db, "reviewWeights");
+        const reviewsRef = collection(db, "reviews");
+        const weightsSnapshot = await getDocs(weightsRef);
+        const reviewsSnapshot = await getDocs(reviewsRef);
+        const reviews = reviewsSnapshot.docs.filter(
+          (doc) => doc.data().movieId === movieId
+        );
+        const weightedRatings = reviews.map((review) => {
+          const weightDoc = weightsSnapshot.docs.find(
+            (weight) => weight.id === review.id
+          );
+          return (
+            review.data().rating * (weightDoc ? weightDoc.data().weight : 1)
+          );
+        });
+        const averageRating =
+          weightedRatings.reduce((acc, rating) => acc + rating, 0) /
+          weightedRatings.length;
+        setMovieRating(averageRating);
+        console.log(averageRating);
+      } catch (error) {
+        console.error("Error fetching movie ratings: ", error);
+        message.error("Failed to fetch movie ratings.");
+      }
+    };
+
+    fetchMovieRatings();
+  }, [movieId]);
 
   useEffect(() => {
     const fetchMovieDetails = async () => {
@@ -66,14 +104,6 @@ export default function MovieDescription() {
       }
     }
   };
-
-  const CommentActions = () => (
-    <div>
-      <Button type="link">Remove</Button>
-      <Button type="link">Edit</Button>
-      <Button type="link">Censor</Button>
-    </div>
-  );
 
   if (!movie) {
     return (
@@ -147,7 +177,7 @@ export default function MovieDescription() {
 
           <div className="mb-6">
             <h2 className="text-xl font-bold mb-2">User Ratings</h2>
-            <Rate allowHalf defaultValue={movie.rating || 4.5} />
+            <Rate allowHalf defaultValue={5} value={movieRating} />
           </div>
 
           {user?.data?.isAdmin && (
@@ -165,7 +195,7 @@ export default function MovieDescription() {
           )}
         </div>
       </div>
-      
+
       <div className="mt-8">
         <CommentSection movieId={movieId} />
       </div>

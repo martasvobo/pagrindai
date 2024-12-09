@@ -38,9 +38,9 @@ export default function ReviewComment({ review, users, setFormReviewId }) {
   return (
     <div key={review.id} className="mb-4 p-4 border rounded-lg shadow-sm">
       <div className="flex items-center mb-2">
-        <Avatar src={users[review.userId].photoUrl} />
+        <Avatar src={users[review.userId]?.photoUrl} />
         <span className="ml-2 font-semibold">
-          {users[review.userId].username}
+          {users[review.userId]?.username}
         </span>
       </div>
       <div className="mb-2">
