@@ -167,7 +167,6 @@ export default function MovieDescription() {
       </div>
       
       <div className="mt-8">
-        <h2 className="text-xl font-bold mb-4">User Comments</h2>
         <CommentSection movieId={movieId} />
       </div>
       <ReviewSection />

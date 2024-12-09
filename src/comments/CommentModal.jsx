@@ -1,7 +1,7 @@
 import { Button, Form, Input, message, Modal } from "antd";
 import FormItem from "antd/es/form/FormItem";
 import { httpsCallable } from "firebase/functions";
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { functions } from "../../firebase";
 
 export default function CommentModal({ 
@@ -9,7 +9,7 @@ export default function CommentModal({
   movieId, 
   setFormCommentId, 
   form, 
-  comments 
+  comments,
 }) {
   const handleOk = () => {
     form.submit();
@@ -37,22 +37,38 @@ export default function CommentModal({
         message.error("Failed to save comment.");
       });
   };
+  const updateComment = (fields) => {
+    const updateComment = httpsCallable(functions, "comments-updateComment");
+  
+    updateComment({ commentId: form.getFieldValue("id"), text: fields.text })
+      .then((result) => {
+        if (result.data.status === "error") {
+          message.error(result.data.error);
+          return;
+        }
+        message.success("Comment updated successfully!");
+        form.resetFields();
+        setFormCommentId(null);
+      })
+      .catch(() => {
+        message.error("Failed to update comment.");
+      });
+  };
 
   useEffect(() => {
     if (commentId !== null) {
       form.resetFields();
-      if (commentId !== -1)
-      {
+      if (commentId !== -1) {
         const comment = comments.find((c) => c.id === commentId);
         form.setFieldsValue(comment);
       }
     }
-  }, [commentId, comments, form]);
+  }, [commentId]);
 
   return (
     <div>
       <Modal
-        title={"Add Comment"}
+        title={commentId === -1 ? "Add Comment" : "Edit Comment"}
         open={commentId !== null}
         onOk={handleOk}
         onCancel={handleCancel}
@@ -67,7 +83,7 @@ export default function CommentModal({
       >
         <Form 
           layout="vertical" 
-          onFinish={createComment}
+          onFinish={commentId === -1 ? createComment : updateComment}
           form={form} 
         >
           <FormItem
@@ -79,6 +95,7 @@ export default function CommentModal({
           </FormItem>
         </Form>
       </Modal>
+      {/* Censorship Modal for Admin */}
     </div>
   );
 }

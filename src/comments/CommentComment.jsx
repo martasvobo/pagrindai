@@ -1,10 +1,13 @@
+import React, { useState } from "react";
 import { Avatar, Button, message } from "antd";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../../firebase";
 import { useAuth } from "../contexts/authContext/useAuth";
+import CommentCensor from "./CommentCensor";
 
 export default function CommentComment({ comment, users, setFormCommentId }) {
   const { user } = useAuth();
+  const [isCensorModalVisible, setIsCensorModalVisible] = useState(false);
 
   const deleteComment = async () => {
     try {
@@ -21,19 +24,16 @@ export default function CommentComment({ comment, users, setFormCommentId }) {
     setFormCommentId(comment.id);
   };
 
-  const censorComment = async () => {
-    try {
-      const censorComment = httpsCallable(functions, "comments-censorComment");
-      const result = await censorComment({ commentId: comment.id });
-      if (result.data.status === "error") {
-        message.error(result.data.error);
-        return;
-      }
-      message.success("Comment censored successfully");
-    } catch (error) {
-      console.error(error);
-      message.error("Error censoring comment");
-    }
+  const openCensorModal = () => {
+    setIsCensorModalVisible(true);
+  };
+
+  const closeCensorModal = () => {
+    setIsCensorModalVisible(false);
+  };
+
+  const handleCensorComplete = () => {
+    message.success("Censorship completed.");
   };
 
   return (
@@ -48,7 +48,7 @@ export default function CommentComment({ comment, users, setFormCommentId }) {
         <p className="text-gray-700">{comment.text}</p>
         {comment.censored && (
           <p className="text-red-500 text-sm">
-            Censored: {comment.censorshipReason || "No reason provided"}
+            Censored
           </p>
         )}
       </div>
@@ -63,10 +63,18 @@ export default function CommentComment({ comment, users, setFormCommentId }) {
             </Button>
           </>
         )}
-        {user.data.isAdmin && !comment.censored && (
-          <Button danger onClick={censorComment}>
-            Censor
-          </Button>
+        {user.data.isAdmin && (
+          <>
+            <Button danger onClick={openCensorModal}>
+              Censor
+            </Button>
+            <CommentCensor
+              comment={comment}
+              visible={isCensorModalVisible}
+              onClose={closeCensorModal}
+              onCensorComplete={handleCensorComplete}
+            />
+          </>
         )}
       </div>
     </div>
